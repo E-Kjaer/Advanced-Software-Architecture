@@ -1,2 +1,21 @@
+services:
+  tapper:
+    container_name: tapper
+    restart: on-failure
+    build:
+      context: src/gel_tapper
+      dockerfile: Dockerfile
 
-  
+  sealer:
+    container_name: sealer
+    restart: on-failure
+    build:
+      context: src/gel_sealer
+      dockerfile: Dockerfile
+
+  coordination-system:
+    container_name: pcs
+    restart: on-failure
+    build:
+      context: src/pcs
+      dockerfile: Dockerfile
