@@ -181,63 +181,63 @@ increment_gels()</label>
 const int sealer_delay = 50;
 const int capacity = 5;
 
-C = Conveyor(capacity);
-P = PCS();
-S = Sealer(sealer_delay);
-T = Tapper(tapper_delay);
+Conveyor1 = Conveyor(capacity);
+ProductionCoordinationSystem1 = PCS();
+Sealer1 = Sealer(sealer_delay);
+Tapper1 = Tapper(tapper_delay);
 
 // List one or more processes to be composed into a system.
-system C, P, S, T;
+system Conveyor1, ProductionCoordinationSystem1, Sealer1, Tapper1;
 </system>
 	<queries>
 		<query>
 			<formula>A[] not deadlock</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:43:57 +0100">
 			</result>
 		</query>
 		<query>
 			<formula>A[] gels_in_queue &lt;= capacity</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:43:57 +0100">
 			</result>
 		</query>
 		<query>
 			<formula>A[] gels_in_queue &gt;= 0</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:43:57 +0100">
 			</result>
 		</query>
 		<query>
-			<formula>A[] (T.Halt imply gels_in_queue &lt;= capacity)</formula>
+			<formula>A[] (Tapper1.Halt imply gels_in_queue &lt;= capacity)</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:43:57 +0100">
 			</result>
 		</query>
 		<query>
-			<formula>gels_in_queue &gt;= capacity --&gt; T.Halt</formula>
+			<formula>gels_in_queue &gt;= capacity --&gt; Tapper1.Halt</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:43:57 +0100">
 			</result>
 		</query>
 		<query>
-			<formula>A[] (halted imply T.Halt)</formula>
+			<formula>A[] (halted imply Tapper1.Halt)</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:43:57 +0100">
 			</result>
 		</query>
 		<query>
-			<formula>T.Halt --&gt; T.Running</formula>
+			<formula>Tapper1.Halt --&gt; Tapper1.Running</formula>
 			<comment/>
 			<option key="--diagnostic" value="0"/>
-			<result outcome="success" type="quality" timestamp="2026-11-09 10:22:19 +0100">
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:43:57 +0100">
 				<option key="--diagnostic" value="0"/>
 			</result>
 		</query>
 		<query>
-			<formula>P.process_ready --&gt; T.Running</formula>
+			<formula>ProductionCoordinationSystem1.process_ready --&gt; Tapper1.Running</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:43:57 +0100">
 			</result>
 		</query>
 	</queries>
