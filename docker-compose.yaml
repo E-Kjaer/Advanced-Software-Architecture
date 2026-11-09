@@ -38,6 +38,7 @@ services:
     volumes:
       - ./src/kafka-setup.sh:/scripts/kafka-setup.sh:ro
     entrypoint: [ "/bin/bash", "/scripts/kafka-setup.sh" ]
+    restart: on-failure:5
     depends_on:
       kafka:
         condition: service_healthy
@@ -48,6 +49,9 @@ services:
     build:
       context: src/gel_tapper
       dockerfile: Dockerfile
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
 
   sealer:
     container_name: sealer
@@ -55,6 +59,9 @@ services:
     build:
       context: src/gel_sealer
       dockerfile: Dockerfile
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
 
   coordination-system:
     container_name: pcs
@@ -62,3 +69,6 @@ services:
     build:
       context: src/pcs
       dockerfile: Dockerfile
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
