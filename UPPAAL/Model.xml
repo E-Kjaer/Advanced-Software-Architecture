@@ -2,10 +2,10 @@
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
 <nta>
 	<declaration>// Place global declarations here.
-chan overload, ready, halt, go, produce;
+chan overload, ready, halt, go, produce, consume;
 
 int gels_in_queue = 0;
-bool overloaded = false;
+bool halted = false;
 
 void increment_gels() {
     gels_in_queue++;
@@ -23,72 +23,84 @@ void decrement_gels() {
 		<location id="id1" x="-323" y="-153">
 			<committed/>
 		</location>
+		<location id="id2" x="144" y="-76">
+			<committed/>
+		</location>
 		<init ref="id0"/>
-		<transition id="id2">
-			<source ref="id1"/>
-			<target ref="id0"/>
-			<label kind="guard" x="-314" y="-212">gels_in_queue &lt; capacity || overloaded</label>
-			<nail x="-102" y="-187"/>
-		</transition>
 		<transition id="id3">
-			<source ref="id0"/>
-			<target ref="id1"/>
-			<label kind="synchronisation" x="-238" y="-119">produce?</label>
+			<source ref="id2"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-93" y="17">gels_in_queue &gt;= capacity || !halted</label>
+			<nail x="42" y="17"/>
 		</transition>
 		<transition id="id4">
 			<source ref="id0"/>
-			<target ref="id0"/>
-			<label kind="guard" x="8" y="-170">(gels_in_queue &lt; capacity) &amp;&amp; (overloaded)</label>
-			<label kind="synchronisation" x="76" y="-110">ready!</label>
-			<label kind="assignment" x="-17" y="-51">overloaded = false</label>
-			<nail x="68" y="-51"/>
-			<nail x="68" y="-144"/>
+			<target ref="id2"/>
+			<label kind="synchronisation" x="8" y="-76">consume?</label>
 		</transition>
 		<transition id="id5">
 			<source ref="id1"/>
 			<target ref="id0"/>
-			<label kind="guard" x="-697" y="-136">(gels_in_queue &gt;= capacity) &amp;&amp; !overloaded</label>
+			<label kind="guard" x="-314" y="-212">gels_in_queue &lt; capacity || halted</label>
+			<nail x="-102" y="-187"/>
+		</transition>
+		<transition id="id6">
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-238" y="-119">produce?</label>
+		</transition>
+		<transition id="id7">
+			<source ref="id2"/>
+			<target ref="id0"/>
+			<label kind="guard" x="84" y="-204">(gels_in_queue &lt; capacity) &amp;&amp; (halted)</label>
+			<label kind="synchronisation" x="152" y="-144">ready!</label>
+			<nail x="144" y="-85"/>
+			<nail x="144" y="-178"/>
+		</transition>
+		<transition id="id8">
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-697" y="-136">(gels_in_queue &gt;= capacity) &amp;&amp; !halted</label>
 			<label kind="synchronisation" x="-416" y="-93">overload!</label>
-			<label kind="assignment" x="-374" y="-42">overloaded = true</label>
 			<nail x="-323" y="-144"/>
 			<nail x="-323" y="-51"/>
 		</transition>
 	</template>
 	<template>
 		<name>PCS</name>
-		<location id="id6" x="-34" y="-119">
+		<location id="id9" x="-34" y="-119">
 			<name x="-59" y="-153">Monitor</name>
 		</location>
-		<location id="id7" x="-221" y="-8">
+		<location id="id10" x="-221" y="-8">
 			<name x="-246" y="8">process_overload</name>
 			<committed/>
 		</location>
-		<location id="id8" x="127" y="0">
+		<location id="id11" x="127" y="0">
 			<name x="85" y="17">process_ready</name>
 			<committed/>
 		</location>
-		<init ref="id6"/>
-		<transition id="id9">
-			<source ref="id7"/>
-			<target ref="id6"/>
+		<init ref="id9"/>
+		<transition id="id12">
+			<source ref="id10"/>
+			<target ref="id9"/>
 			<label kind="synchronisation" x="-110" y="-25">halt!</label>
 			<nail x="-102" y="-25"/>
 		</transition>
-		<transition id="id10">
-			<source ref="id6"/>
-			<target ref="id8"/>
+		<transition id="id13">
+			<source ref="id9"/>
+			<target ref="id11"/>
 			<label kind="synchronisation" x="8" y="-51">ready?</label>
 			<nail x="0" y="-25"/>
 		</transition>
-		<transition id="id11">
-			<source ref="id8"/>
-			<target ref="id6"/>
+		<transition id="id14">
+			<source ref="id11"/>
+			<target ref="id9"/>
 			<label kind="synchronisation" x="102" y="-85">go!</label>
 			<nail x="93" y="-93"/>
 		</transition>
-		<transition id="id12">
-			<source ref="id6"/>
-			<target ref="id7"/>
+		<transition id="id15">
+			<source ref="id9"/>
+			<target ref="id10"/>
 			<label kind="synchronisation" x="-212" y="-119">overload?</label>
 			<nail x="-170" y="-93"/>
 		</transition>
@@ -97,17 +109,35 @@ void decrement_gels() {
 		<name>Sealer</name>
 		<parameter>const int sealer_delay</parameter>
 		<declaration>clock y;</declaration>
-		<location id="id13" x="0" y="-25">
+		<location id="id16" x="0" y="-25">
+			<name x="17" y="-51">Running</name>
+			<label kind="invariant" x="0" y="-8">y &lt;= sealer_delay</label>
 		</location>
-		<init ref="id13"/>
-		<transition id="id14">
-			<source ref="id13"/>
-			<target ref="id13"/>
-			<label kind="guard" x="34" y="-8">y&gt;=sealer_delay &amp;&amp; gels_in_queue &gt; 0</label>
-			<label kind="assignment" x="-68" y="51">y=0,
+		<location id="id17" x="-229" y="-25">
+			<name x="-314" y="-42">Produce</name>
+			<committed/>
+		</location>
+		<init ref="id16"/>
+		<transition id="id18">
+			<source ref="id16"/>
+			<target ref="id17"/>
+			<label kind="guard" x="-170" y="-25">y &gt;= sealer_delay</label>
+		</transition>
+		<transition id="id19">
+			<source ref="id17"/>
+			<target ref="id16"/>
+			<label kind="guard" x="-170" y="68">gels_in_queue &gt; 0</label>
+			<label kind="synchronisation" x="-212" y="34">consume!</label>
+			<label kind="assignment" x="-187" y="102">y = 0,
 decrement_gels()</label>
-			<nail x="-51" y="42"/>
-			<nail x="51" y="42"/>
+			<nail x="-110" y="59"/>
+		</transition>
+		<transition id="id20">
+			<source ref="id17"/>
+			<target ref="id16"/>
+			<label kind="guard" x="-213" y="-144">gels_in_queue &lt;= 0</label>
+			<label kind="assignment" x="-196" y="-110">y = 0</label>
+			<nail x="-110" y="-110"/>
 		</transition>
 	</template>
 	<template>
@@ -115,28 +145,30 @@ decrement_gels()</label>
 		<parameter>const int tapper_delay</parameter>
 		<declaration>// Place local declarations here.
 clock x;</declaration>
-		<location id="id15" x="-8" y="85">
+		<location id="id21" x="-8" y="85">
 			<name x="34" y="68">Running</name>
 		</location>
-		<location id="id16" x="-212" y="85">
+		<location id="id22" x="-212" y="85">
 			<name x="-246" y="51">Halt</name>
 		</location>
-		<init ref="id15"/>
-		<transition id="id17">
-			<source ref="id16"/>
-			<target ref="id15"/>
+		<init ref="id21"/>
+		<transition id="id23">
+			<source ref="id22"/>
+			<target ref="id21"/>
 			<label kind="synchronisation" x="-144" y="102">go?</label>
+			<label kind="assignment" x="-221" y="119">halted = false</label>
 			<nail x="-93" y="110"/>
 		</transition>
-		<transition id="id18">
-			<source ref="id15"/>
-			<target ref="id16"/>
+		<transition id="id24">
+			<source ref="id21"/>
+			<target ref="id22"/>
 			<label kind="synchronisation" x="-136" y="34">halt?</label>
+			<label kind="assignment" x="-187" y="17">halted = true</label>
 			<nail x="-127" y="51"/>
 		</transition>
-		<transition id="id19">
-			<source ref="id15"/>
-			<target ref="id15"/>
+		<transition id="id25">
+			<source ref="id21"/>
+			<target ref="id21"/>
 			<label kind="guard" x="42" y="102">x &gt;= tapper_delay</label>
 			<label kind="synchronisation" x="-25" y="161">produce!</label>
 			<label kind="assignment" x="-93" y="161">x = 0,
@@ -147,7 +179,7 @@ increment_gels()</label>
 	</template>
 	<system>const int tapper_delay = 5;
 const int sealer_delay = 50;
-const int capacity = 20;
+const int capacity = 5;
 
 C = Conveyor(capacity);
 P = PCS();
@@ -161,19 +193,51 @@ system C, P, S, T;
 		<query>
 			<formula>A[] not deadlock</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2026-11-09 09:12:50 +0100">
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
 			</result>
 		</query>
 		<query>
-			<formula>A[] gels_in_queue &lt;= 20</formula>
+			<formula>A[] gels_in_queue &lt;= capacity</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2026-11-09 09:10:27 +0100">
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
 			</result>
 		</query>
 		<query>
-			<formula>A[] (T.Halt imply gels_in_queue &lt;= 20)</formula>
+			<formula>A[] gels_in_queue &gt;= 0</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2026-11-09 09:22:03 +0100">
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
+			</result>
+		</query>
+		<query>
+			<formula>A[] (T.Halt imply gels_in_queue &lt;= capacity)</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
+			</result>
+		</query>
+		<query>
+			<formula>gels_in_queue &gt;= capacity --&gt; T.Halt</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
+			</result>
+		</query>
+		<query>
+			<formula>A[] (halted imply T.Halt)</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
+			</result>
+		</query>
+		<query>
+			<formula>T.Halt --&gt; T.Running</formula>
+			<comment/>
+			<option key="--diagnostic" value="0"/>
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:22:19 +0100">
+				<option key="--diagnostic" value="0"/>
+			</result>
+		</query>
+		<query>
+			<formula>P.process_ready --&gt; T.Running</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-11-09 10:14:16 +0100">
 			</result>
 		</query>
 	</queries>
