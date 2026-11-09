@@ -35,15 +35,9 @@ services:
   kafka-init:
     image: apache/kafka:4.4.0
     container_name: kafka_init
-    entrypoint:
-      - /opt/kafka/bin/kafka-topics.sh
-    command:
-      - --bootstrap-server
-      - kafka:9092
-      - --create
-      - --if-not-exists
-      - --topic
-      - test-topic
+    volumes:
+      - ./src/kafka-setup.sh:/scripts/kafka-setup.sh:ro
+    entrypoint: [ "/bin/bash", "/scripts/kafka-setup.sh" ]
     depends_on:
       kafka:
         condition: service_healthy
