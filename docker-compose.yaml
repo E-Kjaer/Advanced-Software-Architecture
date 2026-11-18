@@ -43,12 +43,38 @@ services:
       kafka:
         condition: service_healthy
 
-  tapper:
-    container_name: tapper
+  tapper-1:
+    container_name: tapper_1
     restart: on-failure
     build:
       context: src/gel_tapper
       dockerfile: Dockerfile
+    environment:
+      MACHINE_ID: tapper_1
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+
+  tapper-2:
+    container_name: tapper_2
+    restart: on-failure
+    build:
+      context: src/gel_tapper
+      dockerfile: Dockerfile
+    environment:
+      MACHINE_ID: tapper_2
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+
+  tapper-3:
+    container_name: tapper_3
+    restart: on-failure
+    build:
+      context: src/gel_tapper
+      dockerfile: Dockerfile
+    environment:
+      MACHINE_ID: tapper_3
     depends_on:
       kafka-init:
         condition: service_completed_successfully
