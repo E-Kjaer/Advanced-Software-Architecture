@@ -34,7 +34,7 @@ def main() :
 
     consumer = KafkaConsumer(
         bootstrap_servers='kafka:9092',
-        group_id=f"tapper_{machine_id}",
+        group_id=f"{machine_id}",
         auto_offset_reset="latest",
         enable_auto_commit=False,
         value_deserializer=JsonSerializer()
