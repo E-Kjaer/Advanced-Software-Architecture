@@ -14,7 +14,7 @@ MACHINES_BY_TYPE: dict[str, list[int]] = {
     "TAPPER": [1, 2, 3]
 }
 
-PCS_LIFETIME = 5
+PCS_LIFETIME = 30
 
 def utc_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace(
@@ -91,7 +91,7 @@ def main() :
     send_command_to_all_machines(producer, MACHINES_BY_TYPE, "START")
 
     # Init state variables
-    time_start = datetime.now()
+    time_start = datetime.now(timezone.utc)
     overloaded_machine = 0
     overloaded = False
 
@@ -106,6 +106,7 @@ def main() :
 
             case "RUNNING":
                 if overloaded and overloaded_machine == message["machineId"]:
+                    print("Overload over", utc_timestamp())
                     overloaded = False
                     overloaded_machine = 0
                     send_command_to_machine_type(producer, MACHINES_BY_TYPE["TAPPER"], "TAPPER", "START")
@@ -114,7 +115,11 @@ def main() :
                 continue
 
             case "OVERLOADED":
-                print(message)
+                # Ignore duplicate message from same machine
+                if overloaded and overloaded_machine == message["machineId"]:
+                    continue
+
+                print("Overload detected", utc_timestamp())
                 overloaded = True
                 overloaded_machine = message["machineId"]
                 send_command_to_machine_type(producer, MACHINES_BY_TYPE["TAPPER"], "TAPPER", "STOP")
