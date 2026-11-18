@@ -54,7 +54,7 @@ services:
       context: src/gel_tapper
       dockerfile: Dockerfile
     volumes:
-      - src/logging:rw
+      - ./src/logging:/usr/src/app/logs:rw
     environment:
       MACHINE_ID: 1
     depends_on:
@@ -68,7 +68,7 @@ services:
       context: src/gel_tapper
       dockerfile: Dockerfile
     volumes:
-      - src/logging:rw
+      - ./src/logging:/usr/src/app/logs:rw
     environment:
       MACHINE_ID: 2
     depends_on:
@@ -82,7 +82,7 @@ services:
       context: src/gel_tapper
       dockerfile: Dockerfile
     volumes:
-      - src/logging:rw
+      - ./src/logging:/usr/src/app/logs:rw
     environment:
       MACHINE_ID: 3
     depends_on:
@@ -96,7 +96,7 @@ services:
       context: src/gel_sealer
       dockerfile: Dockerfile
     volumes:
-      - src/logging:/usr/src/app/command-logs
+      - ./src/logging:/usr/src/app/logs
     depends_on:
       kafka-init:
         condition: service_completed_successfully
@@ -108,7 +108,7 @@ services:
       context: src/pcs
       dockerfile: Dockerfile
     volumes:
-      - src/logging:rw
+      - ./src/logging:/usr/src/app/logs:rw
     depends_on:
       kafka-init:
         condition: service_completed_successfully

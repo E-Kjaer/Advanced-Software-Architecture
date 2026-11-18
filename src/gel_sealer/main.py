@@ -10,7 +10,7 @@ from kafka import KafkaConsumer, KafkaProducer, JsonSerializer
 BOOTSTRAP_SERVERS = "kafka:9092"
 COMMANDS_TOPIC = "sealers-commands"
 MESSAGES_TOPIC = "sealers-messages"
-COMMANDS_FILE = os.getenv("COMMANDS_FILE", "command-logs/commands.log")
+LOG_FILE = os.getenv("LOG_FILE", "logs/sealer.log")
 MACHINE_ID = int(os.getenv("MACHINE_ID", 1))
 GROUP_ID = f"sealer_{MACHINE_ID}"
 POLL_INTERVAL_MS = 10
@@ -53,14 +53,14 @@ class SealerStatus:
             self._value = value
 
 
-def write_command(command: Any) -> None:
-    """Append a received command and its receive timestamp to the command log."""
-    directory = os.path.dirname(COMMANDS_FILE)
+def write_log_entry(entry: Any) -> None:
+    """Append a timestamped JSON entry to the local log file."""
+    directory = os.path.dirname(LOG_FILE)
     if directory:
         os.makedirs(directory, exist_ok=True)
 
-    with open(COMMANDS_FILE, "a", encoding="utf-8") as file:
-        file.write(f"{utc_timestamp()} {json.dumps(command)}\n")
+    with open(LOG_FILE, "a", encoding="utf-8") as file:
+        file.write(f"{utc_timestamp()} {json.dumps(entry)}\n")
 
 
 def is_targeted(command: Any) -> bool:
@@ -112,8 +112,6 @@ def consume_commands(stop_event: threading.Event, status: SealerStatus) -> None:
 
                     print(f"Received command on {topic_partition}: {command}")
 
-                    write_command(command)
-
                     new_status = handle_command(command)
                     if new_status is not None:
                         status.update(new_status)
@@ -149,10 +147,9 @@ def simulate_overload(
         return
 
     status.update(OVERLOAD_STATUS)
-    producer.send(
-        MESSAGES_TOPIC,
-        make_event(MACHINE_ID, "STATUS", {"status": OVERLOAD_STATUS}),
-    )
+    overload_event = make_event(MACHINE_ID, "STATUS", {"status": OVERLOAD_STATUS})
+    producer.send(MESSAGES_TOPIC, overload_event)
+    write_log_entry(overload_event)
     print(f"Sealer {MACHINE_ID} overloaded")
 
     overload_duration = random.uniform(
@@ -182,7 +179,7 @@ def main():
         f"Publishing heartbeats to '{MESSAGES_TOPIC}' "
         f"every {HEARTBEAT_INTERVAL_MS} ms"
     )
-    print(f"Logging commands to '{COMMANDS_FILE}'")
+    print(f"Logging overload events to '{LOG_FILE}'")
     print(
         "Simulating an overload after a random delay of "
         f"{OVERLOAD_MIN_DELAY_S:g}-{OVERLOAD_MAX_DELAY_S:g} seconds, "
