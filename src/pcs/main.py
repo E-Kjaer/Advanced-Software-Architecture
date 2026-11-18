@@ -1,14 +1,13 @@
-import json
 from datetime import timezone, datetime, timedelta
 from typing import Any
 
 from kafka import KafkaConsumer, KafkaProducer, JsonSerializer
 
-TAPPER_COMMANDS_TOPIC = "tapper-commands"
-TAPPER_MESSAGES_TOPIC = "tapper-messages"
+TAPPER_COMMANDS_TOPIC = "tappers-commands"
+TAPPER_MESSAGES_TOPIC = "tappers-messages"
 
-SEALER_COMMANDS_TOPIC = "sealer-commands"
-SEALER_MESSAGES_TOPIC = "sealer-messages"
+SEALER_COMMANDS_TOPIC = "sealers-commands"
+SEALER_MESSAGES_TOPIC = "sealers-messages"
 
 MACHINES_BY_TYPE: dict[str, list[int]] = {
     "SEALER": [1],
@@ -98,8 +97,7 @@ def main() :
 
     print("CONSUMING MESSAGES")
     for consumerRecord in consumer:
-        message = json.loads(consumerRecord.value)
-        print(message)
+        message = consumerRecord.value
 
         # todo: add logic to match-cases
         match message["payload"]["status"]:
@@ -116,6 +114,7 @@ def main() :
                 continue
 
             case "OVERLOADED":
+                print(message)
                 overloaded = True
                 overloaded_machine = message["machineId"]
                 send_command_to_machine_type(producer, MACHINES_BY_TYPE["TAPPER"], "TAPPER", "STOP")
