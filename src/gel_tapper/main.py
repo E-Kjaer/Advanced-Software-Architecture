@@ -77,11 +77,12 @@ def main() :
             for partition_records in records.values():
                 for record in partition_records:
                     command = record.value
-                    print(f"Received command: {command}")
 
                     if command.get("targetMachine") != machine_id:
                         continue
 
+                    print(f"Received command: {command}")
+                    
                     if command.get("command") == "START":
                         update_status(producer, machine_id, "RUNNING")
 
