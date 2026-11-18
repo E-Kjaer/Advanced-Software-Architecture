@@ -7,4 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+ENV MACHINE_ID=sealer_1
+ENV PYTHONUNBUFFERED=1
+
 CMD [ "python", "./main.py" ]

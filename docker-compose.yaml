@@ -89,6 +89,8 @@ services:
     build:
       context: src/gel_sealer
       dockerfile: Dockerfile
+    volumes:
+      - ./src/gel_sealer/command-logs:/usr/src/app/command-logs
     depends_on:
       kafka-init:
         condition: service_completed_successfully
