@@ -11,8 +11,8 @@ BOOTSTRAP_SERVERS = "kafka:9092"
 COMMANDS_TOPIC = "sealers-commands"
 MESSAGES_TOPIC = "sealers-messages"
 COMMANDS_FILE = os.getenv("COMMANDS_FILE", "command-logs/commands.log")
-MACHINE_ID = os.getenv("MACHINE_ID", "sealer_1")
-GROUP_ID = "sealer_1"
+MACHINE_ID = int(os.getenv("MACHINE_ID", 1))
+GROUP_ID = f"sealer_{MACHINE_ID}"
 POLL_INTERVAL_MS = 10
 HEARTBEAT_INTERVAL_MS = 100
 OVERLOAD_MIN_DELAY_S = 5.0
@@ -29,7 +29,7 @@ def utc_timestamp() -> str:
     )
 
 
-def make_event(machine_id: str, event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
+def make_event(machine_id: str | int, event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "machineId": machine_id,
         "eventType": event_type,
@@ -61,6 +61,11 @@ def write_command(command: Any) -> None:
 
     with open(COMMANDS_FILE, "a", encoding="utf-8") as file:
         file.write(f"{utc_timestamp()} {json.dumps(command)}\n")
+
+
+def is_targeted(command: Any) -> bool:
+    """Return True when the command is addressed to this sealer."""
+    return isinstance(command, dict) and command.get("targetMachine") == MACHINE_ID
 
 
 def handle_command(command: dict[str, Any]) -> str | None:
@@ -100,6 +105,11 @@ def consume_commands(stop_event: threading.Event, status: SealerStatus) -> None:
             for topic_partition, messages in records.items():
                 for message in messages:
                     command = message.value
+
+                    if not is_targeted(command):
+                        print(f"Ignoring command for another machine: {command}")
+                        continue
+
                     print(f"Received command on {topic_partition}: {command}")
 
                     write_command(command)
