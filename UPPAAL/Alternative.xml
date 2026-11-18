@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+chan produced, haltSealer, startSealer;
+broadcast chan sealed, haltTapper, startTapper;</declaration>
+	<template>
+		<name>Sealer</name>
+		<declaration>clock x;</declaration>
+		<location id="id0" x="0" y="0">
+			<name x="-10" y="-34">Idle</name>
+		</location>
+		<location id="id1" x="178" y="0">
+			<name x="152" y="-51">Running</name>
+			<label kind="invariant" x="161" y="17">x&lt;=20</label>
+		</location>
+		<init ref="id0"/>
+		<transition id="id2">
+			<source ref="id1"/>
+			<target ref="id1"/>
+			<label kind="guard" x="195" y="-68">x&gt;=5</label>
+			<label kind="synchronisation" x="255" y="-8">sealed!</label>
+			<label kind="assignment" x="195" y="34">x=0</label>
+			<nail x="246" y="-59"/>
+			<nail x="246" y="51"/>
+		</transition>
+		<transition id="id3">
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="synchronisation" x="68" y="51">haltSealer?</label>
+			<nail x="84" y="46"/>
+		</transition>
+		<transition id="id4">
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="42" y="-76">startSealer?</label>
+			<label kind="assignment" x="34" y="-51">x=0</label>
+			<nail x="93" y="-51"/>
+		</transition>
+	</template>
+	<template>
+		<name>PCS</name>
+		<declaration>int gels = 0;</declaration>
+		<location id="id5" x="-816" y="51">
+			<name x="-826" y="21">Initial</name>
+		</location>
+		<location id="id6" x="-595" y="51">
+			<name x="-620" y="68">NoGels</name>
+		</location>
+		<location id="id7" x="-476" y="-68">
+			<name x="-486" y="-98">StartSealer</name>
+			<committed/>
+		</location>
+		<location id="id8" x="-102" y="-102">
+			<name x="-68" y="-110">HasGels</name>
+		</location>
+		<location id="id9" x="-102" y="-255">
+			<committed/>
+		</location>
+		<location id="id10" x="-102" y="51">
+			<committed/>
+		</location>
+		<location id="id11" x="-603" y="-255">
+			<name x="-637" y="-297">Overload</name>
+		</location>
+		<location id="id12" x="-476" y="-144">
+			<name x="-484" y="-127">StartTapper</name>
+			<committed/>
+		</location>
+		<init ref="id5"/>
+		<transition id="id13">
+			<source ref="id12"/>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="-374" y="-161">startTapper!</label>
+		</transition>
+		<transition id="id14">
+			<source ref="id11"/>
+			<target ref="id12"/>
+			<label kind="guard" x="-646" y="-229">gels==20</label>
+			<label kind="synchronisation" x="-603" y="-195">sealed?</label>
+			<label kind="assignment" x="-552" y="-161">gels--</label>
+		</transition>
+		<transition id="id15">
+			<source ref="id9"/>
+			<target ref="id11"/>
+			<label kind="guard" x="-272" y="-289">gels==20</label>
+			<label kind="synchronisation" x="-391" y="-289">haltTapper!</label>
+		</transition>
+		<transition id="id16">
+			<source ref="id9"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-76" y="-289">gels&lt;20</label>
+			<nail x="-25" y="-255"/>
+		</transition>
+		<transition id="id17">
+			<source ref="id8"/>
+			<target ref="id9"/>
+			<label kind="synchronisation" x="-187" y="-187">produced?</label>
+			<label kind="assignment" x="-161" y="-221">gels++</label>
+		</transition>
+		<transition id="id18">
+			<source ref="id10"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-85" y="59">gels&gt;0</label>
+			<nail x="-17" y="51"/>
+		</transition>
+		<transition id="id19">
+			<source ref="id8"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="-170" y="-59">sealed?</label>
+			<label kind="assignment" x="-162" y="-17">gels--</label>
+		</transition>
+		<transition id="id20">
+			<source ref="id5"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-748" y="26">startTapper!</label>
+		</transition>
+		<transition id="id21">
+			<source ref="id6"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-637" y="-8">gels == 0</label>
+			<label kind="synchronisation" x="-603" y="-34">produced?</label>
+			<label kind="assignment" x="-552" y="-68">gels++</label>
+		</transition>
+		<transition id="id22">
+			<source ref="id7"/>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="-374" y="-59">startSealer!</label>
+		</transition>
+		<transition id="id23">
+			<source ref="id10"/>
+			<target ref="id6"/>
+			<label kind="guard" x="-340" y="68">gels==0</label>
+			<label kind="synchronisation" x="-450" y="68">haltSealer!</label>
+		</transition>
+	</template>
+	<template>
+		<name x="5" y="5">Tapper</name>
+		<declaration>// Place local declarations here.
+clock x;
+
+</declaration>
+		<location id="id24" x="0" y="0">
+			<name x="-17" y="-42">Idle</name>
+		</location>
+		<location id="id25" x="153" y="0">
+			<name x="119" y="-42">Producing</name>
+			<label kind="invariant" x="136" y="17">x&lt;=20</label>
+		</location>
+		<init ref="id24"/>
+		<transition id="id26">
+			<source ref="id25"/>
+			<target ref="id24"/>
+			<label kind="synchronisation" x="59" y="42">haltTapper?</label>
+			<nail x="76" y="42"/>
+		</transition>
+		<transition id="id27">
+			<source ref="id25"/>
+			<target ref="id25"/>
+			<label kind="guard" x="195" y="-59">x&gt;=5</label>
+			<label kind="synchronisation" x="178" y="34">produced!</label>
+			<label kind="assignment" x="255" y="-17">x=0</label>
+			<nail x="245" y="-46"/>
+			<nail x="245" y="30"/>
+		</transition>
+		<transition id="id28">
+			<source ref="id24"/>
+			<target ref="id25"/>
+			<label kind="synchronisation" x="51" y="-68">startTapper?</label>
+			<label kind="assignment" x="25" y="-51">x=0</label>
+			<nail x="76" y="-42"/>
+		</transition>
+	</template>
+	<system>// Place template instantiations here.
+t1 = Tapper();
+t2 = Tapper();
+t3 = Tapper();
+pcs = PCS();
+s = Sealer();
+// List one or more processes to be composed into a system.
+system pcs, t1, t2, t3, s;
+</system>
+	<queries>
+		<option key="--diagnostic" value="0"/>
+		<query>
+			<formula>A[] pcs.gels &gt;= 0 &amp;&amp; pcs.gels &lt;= 20</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-11-11 14:15:46 +0100">
+				<option key="--diagnostic" value="0"/>
+			</result>
+		</query>
+		<query>
+			<formula>A[] not deadlock</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-11-11 14:15:46 +0100">
+			</result>
+		</query>
+		<query>
+			<formula>A[] (s.Running imply pcs.gels &gt;= 0)</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-11-11 14:15:46 +0100">
+				<option key="--diagnostic" value="0"/>
+			</result>
+		</query>
+		<query>
+			<formula>E&lt;&gt; s.Idle</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-11-11 14:15:48 +0100">
+				<option key="--diagnostic" value="0"/>
+			</result>
+		</query>
+		<query>
+			<formula>E&lt;&gt; s.Running</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-11-11 14:15:49 +0100">
+				<option key="--diagnostic" value="0"/>
+			</result>
+		</query>
+	</queries>
+</nta>
