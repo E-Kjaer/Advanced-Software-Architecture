@@ -15,7 +15,7 @@ def utc_timestamp() -> str:
     )
 
 
-def make_event(machine_id: str, event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
+def make_event(machine_id: int, event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "machineId": machine_id,
         "eventType": event_type,
@@ -25,7 +25,7 @@ def make_event(machine_id: str, event_type: str, payload: dict[str, Any]) -> dic
 
 def main() :
     print("Tapper started")
-    machine_id = os.environ.get("MACHINE_ID", "tapper_1")
+    machine_id = int(os.environ.get("MACHINE_ID", 1))
 
     producer = KafkaProducer(
         bootstrap_servers='kafka:9092', 
@@ -34,7 +34,7 @@ def main() :
 
     consumer = KafkaConsumer(
         bootstrap_servers='kafka:9092',
-        group_id=f"{machine_id}",
+        group_id=f"tappaer_{machine_id}",
         auto_offset_reset="latest",
         enable_auto_commit=False,
         value_deserializer=JsonSerializer()
@@ -45,7 +45,7 @@ def main() :
     status_lock = Lock()
     stop_status_updates = Event()
 
-    def update_status(producer: KafkaProducer, machine_id: str, new_status: str) -> None:
+    def update_status(producer: KafkaProducer, machine_id: int, new_status: str) -> None:
         nonlocal status
 
         if new_status not in ["IDLE", "RUNNING"]:
@@ -77,12 +77,12 @@ def main() :
             for partition_records in records.values():
                 for record in partition_records:
                     command = record.value
-
+                    
                     if command.get("targetMachine") != machine_id:
                         continue
-
-                    print(f"Received command: {command}")
                     
+                    print(f"Received command: {command}")
+
                     if command.get("command") == "START":
                         update_status(producer, machine_id, "RUNNING")
 

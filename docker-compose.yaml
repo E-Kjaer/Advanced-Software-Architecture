@@ -54,7 +54,7 @@ services:
       context: src/gel_tapper
       dockerfile: Dockerfile
     environment:
-      MACHINE_ID: tapper_1
+      MACHINE_ID: 1
     depends_on:
       kafka-init:
         condition: service_completed_successfully
@@ -66,7 +66,7 @@ services:
       context: src/gel_tapper
       dockerfile: Dockerfile
     environment:
-      MACHINE_ID: tapper_2
+      MACHINE_ID: 2
     depends_on:
       kafka-init:
         condition: service_completed_successfully
@@ -78,7 +78,7 @@ services:
       context: src/gel_tapper
       dockerfile: Dockerfile
     environment:
-      MACHINE_ID: tapper_3
+      MACHINE_ID: 3
     depends_on:
       kafka-init:
         condition: service_completed_successfully
