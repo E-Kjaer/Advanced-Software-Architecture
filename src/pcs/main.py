@@ -1,3 +1,5 @@
+import json
+import os
 from datetime import timezone, datetime, timedelta
 from typing import Any
 
@@ -15,12 +17,21 @@ MACHINES_BY_TYPE: dict[str, list[int]] = {
 }
 
 PCS_LIFETIME = 30
+LOG_FILE = os.getenv("LOG_FILE", "logs/pcs.log")
 
 def utc_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace(
         "+00:00", "Z"
     )
 
+def write_log_entry(entry: Any) -> None:
+    """Append a timestamped JSON entry to the local log file."""
+    directory = os.path.dirname(LOG_FILE)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+
+    with open(LOG_FILE, "a", encoding="utf-8") as file:
+        file.write(f"{utc_timestamp()} {json.dumps(entry)}\n")
 
 def make_command(machine_id: int, command: str) -> dict[str, Any]:
     return {
@@ -71,7 +82,7 @@ def send_command_to_machine_type(producer: KafkaProducer, machine_ids_in_type: l
         producer.send(topic, make_command(machine_id, command))
 
 def main() :
-    print("PCS STARTED", utc_timestamp())
+    write_log_entry("pcs started")
 
     producer = KafkaProducer(
         bootstrap_servers='kafka:9092',
@@ -87,7 +98,7 @@ def main() :
     consumer.subscribe([TAPPER_MESSAGES_TOPIC, SEALER_MESSAGES_TOPIC])
 
     # Start all machines
-    print("STARTING MACHINES")
+    write_log_entry(f"pcs starting machines")
     send_command_to_all_machines(producer, MACHINES_BY_TYPE, "START")
 
     # Init state variables
@@ -95,42 +106,44 @@ def main() :
     overloaded_machine = 0
     overloaded = False
 
-    print("CONSUMING MESSAGES")
+    write_log_entry("pcs listening for messages")
     for consumerRecord in consumer:
         message = consumerRecord.value
 
-        # todo: add logic to match-cases
         match message["payload"]["status"]:
             case "IDLE":
                 continue
 
             case "RUNNING":
                 if overloaded and overloaded_machine == message["machineId"]:
-                    print("Overload over", utc_timestamp())
+                    write_log_entry("Overload stopped")
                     overloaded = False
                     overloaded_machine = 0
                     send_command_to_machine_type(producer, MACHINES_BY_TYPE["TAPPER"], "TAPPER", "START")
+                    write_log_entry("Restarted machines after overload")
 
             case "ERROR":
                 continue
 
             case "OVERLOADED":
                 # Ignore duplicate message from same machine
-                if overloaded and overloaded_machine == message["machineId"]:
-                    continue
+                #if overloaded and overloaded_machine == message["machineId"]:
+                #    continue
 
-                print("Overload detected", utc_timestamp())
+                write_log_entry("Overload received")
                 overloaded = True
                 overloaded_machine = message["machineId"]
                 send_command_to_machine_type(producer, MACHINES_BY_TYPE["TAPPER"], "TAPPER", "STOP")
+                write_log_entry("Overload handled")
 
         # Stop the experiment after the defined lifetime
         if datetime.now(timezone.utc) - time_start > timedelta(seconds=PCS_LIFETIME):
-            print("STOPPING MACHINES")
+            write_log_entry("Timeout reached")
             send_command_to_all_machines(producer, MACHINES_BY_TYPE, "STOP")
+            write_log_entry("Stopped machines")
             break
 
-    print("PCS FINISHED", utc_timestamp())
+    write_log_entry("pcs finished")
 
 if __name__ == '__main__':
     main()
