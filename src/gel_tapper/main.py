@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import json
 import os
 from threading import Event, Lock, Thread
 from typing import Any
@@ -8,12 +9,21 @@ from kafka import KafkaConsumer, KafkaProducer, JsonSerializer
 COMMANDS_TOPIC = "tappers-commands"
 MESSAGES_TOPIC = "tappers-messages"
 STATUS_INTERVAL_SECONDS = 0.1
+LOG_FILE = os.getenv("LOG_FILE", f"logs/tapper{os.getenv('MACHINE_ID', 1)}.log")
 
 def utc_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace(
         "+00:00", "Z"
     )
 
+def write_log_entry(entry: Any) -> None:
+    """Append a timestamped JSON entry to the local log file."""
+    directory = os.path.dirname(LOG_FILE)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+
+    with open(LOG_FILE, "a", encoding="utf-8") as file:
+        file.write(f"{utc_timestamp()} {json.dumps(entry)}\n")
 
 def make_event(machine_id: int, event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     return {
@@ -34,7 +44,7 @@ def main() :
 
     consumer = KafkaConsumer(
         bootstrap_servers='kafka:9092',
-        group_id=f"tappaer_{machine_id}",
+        group_id=f"tapper_{machine_id}",
         auto_offset_reset="latest",
         enable_auto_commit=False,
         value_deserializer=JsonSerializer()
@@ -57,6 +67,7 @@ def main() :
 
             status = new_status
             event = make_event(machine_id, "STATUS", {"status": new_status})
+            write_log_entry(event)
             producer.send(MESSAGES_TOPIC, event)
             print(f"Sent status update: {event}")
 
