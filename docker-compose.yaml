@@ -97,6 +97,11 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./src/logging:/usr/src/app/logs
+    environment:
+      OVERLOAD_MESSAGE_COUNT: ${OVERLOAD_MESSAGE_COUNT:-0}
+      OVERLOAD_MESSAGE_INTERVAL_MS: ${OVERLOAD_MESSAGE_INTERVAL_MS:-50}
+      BENCHMARK_WARMUP_MS: ${BENCHMARK_WARMUP_MS:-5000}
+      RUN_ID: ${RUN_ID:-}
     depends_on:
       kafka-init:
         condition: service_completed_successfully

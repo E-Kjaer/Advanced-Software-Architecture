@@ -22,6 +22,13 @@ OVERLOAD_DURATION_MAX_S = 15.0
 RUNNING_STATUS = "RUNNING"
 OVERLOAD_STATUS = "OVERLOADED"
 
+# Experiment mode: OVERLOAD_MESSAGE_COUNT > 0 sends that many OVERLOAD events
+# instead of running the single random overload simulation.
+OVERLOAD_MESSAGE_COUNT = int(os.getenv("OVERLOAD_MESSAGE_COUNT", "0"))
+OVERLOAD_MESSAGE_INTERVAL_MS = int(os.getenv("OVERLOAD_MESSAGE_INTERVAL_MS", "50"))
+BENCHMARK_WARMUP_MS = int(os.getenv("BENCHMARK_WARMUP_MS", "5000"))
+RUN_ID = os.getenv("RUN_ID", "")
+
 
 def utc_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace(
@@ -29,13 +36,21 @@ def utc_timestamp() -> str:
     )
 
 
-def make_event(machine_id: str | int, event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
-    return {
+def make_event(
+    machine_id: str | int,
+    event_type: str,
+    payload: dict[str, Any],
+    heartbeat: bool = False,
+) -> dict[str, Any]:
+    event = {
         "machineId": machine_id,
         "eventType": event_type,
         "timestamp": utc_timestamp(),
         "payload": payload,
     }
+    if heartbeat:
+        event["heartbeat"] = True
+    return event
 
 
 class SealerStatus:
@@ -131,7 +146,12 @@ def send_heartbeats(
     while not stop_event.wait(HEARTBEAT_INTERVAL_MS / 1000):
         producer.send(
             MESSAGES_TOPIC,
-            make_event(MACHINE_ID, "STATUS", {"status": status.value}),
+            make_event(
+                MACHINE_ID,
+                "STATUS",
+                {"status": status.value},
+                heartbeat=True,
+            ),
         )
 
 
@@ -172,6 +192,65 @@ def simulate_overload(
     print(f"Sealer {MACHINE_ID} running")
 
 
+def send_overload_messages(
+    producer: KafkaProducer,
+    status: SealerStatus,
+    stop_event: threading.Event,
+) -> None:
+    """Publish a fixed number of OVERLOAD events for the latency experiment.
+
+    Each event gets a unique scenarioId and its own overloadTimestamp so the
+    benchmark can pair it with the STOP command produced by the PCS.
+    """
+    count = OVERLOAD_MESSAGE_COUNT
+    interval_ms = OVERLOAD_MESSAGE_INTERVAL_MS
+    warmup_ms = BENCHMARK_WARMUP_MS
+    run_id = RUN_ID or utc_timestamp()
+
+    print(
+        f"Sending {count} overload messages every {interval_ms} ms "
+        f"after a {warmup_ms} ms warmup"
+    )
+
+    if stop_event.wait(warmup_ms / 1000):
+        return
+
+    status.update(OVERLOAD_STATUS)
+
+    sent = 0
+    for sequence in range(1, count + 1):
+        if stop_event.is_set():
+            break
+
+        scenario_id = f"{run_id}-{MACHINE_ID}-{sequence:06d}"
+        overload_event = make_event(
+            MACHINE_ID,
+            "STATUS",
+            {
+                "status": OVERLOAD_STATUS,
+                "scenarioId": scenario_id,
+                "overloadTimestamp": utc_timestamp(),
+            },
+        )
+
+        producer.send(MESSAGES_TOPIC, overload_event)
+        write_log_entry(overload_event)
+        sent += 1
+
+        if stop_event.wait(interval_ms / 1000):
+            break
+
+    print(f"Sent {sent} overload messages")
+
+    if not stop_event.is_set():
+        status.update(RUNNING_STATUS)
+        producer.send(
+            MESSAGES_TOPIC,
+            make_event(MACHINE_ID, "STATUS", {"status": RUNNING_STATUS}),
+        )
+        print(f"Sealer {MACHINE_ID} running")
+
+
 def main():
     print(f"Sealer '{MACHINE_ID}' is operational")
     print(f"Listening for commands on '{COMMANDS_TOPIC}'")
@@ -180,12 +259,19 @@ def main():
         f"every {HEARTBEAT_INTERVAL_MS} ms"
     )
     print(f"Logging overload events to '{LOG_FILE}'")
-    print(
-        "Simulating an overload after a random delay of "
-        f"{OVERLOAD_MIN_DELAY_S:g}-{OVERLOAD_MAX_DELAY_S:g} seconds, "
-        "recovering after a random "
-        f"{OVERLOAD_DURATION_MIN_S:g}-{OVERLOAD_DURATION_MAX_S:g} seconds"
-    )
+    if OVERLOAD_MESSAGE_COUNT > 0:
+        print(
+            f"Experiment mode: sending {OVERLOAD_MESSAGE_COUNT} overload messages "
+            f"every {OVERLOAD_MESSAGE_INTERVAL_MS} ms after "
+            f"{BENCHMARK_WARMUP_MS} ms warmup"
+        )
+    else:
+        print(
+            "Simulating an overload after a random delay of "
+            f"{OVERLOAD_MIN_DELAY_S:g}-{OVERLOAD_MAX_DELAY_S:g} seconds, "
+            "recovering after a random "
+            f"{OVERLOAD_DURATION_MIN_S:g}-{OVERLOAD_DURATION_MAX_S:g} seconds"
+        )
 
     status = SealerStatus()
     stop_event = threading.Event()
@@ -203,10 +289,17 @@ def main():
     )
     consumer_thread.start()
 
+    if OVERLOAD_MESSAGE_COUNT > 0:
+        overload_target = send_overload_messages
+        overload_thread_name = "overload-message-sender"
+    else:
+        overload_target = simulate_overload
+        overload_thread_name = "overload-simulator"
+
     overload_thread = threading.Thread(
-        target=simulate_overload,
+        target=overload_target,
         args=(producer, status, stop_event),
-        name="overload-simulator",
+        name=overload_thread_name,
         daemon=True,
     )
     overload_thread.start()
