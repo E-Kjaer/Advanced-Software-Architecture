@@ -62,12 +62,12 @@ def main() :
             raise ValueError(f"Invalid status: {new_status}")
 
         with status_lock:
+            event = make_event(machine_id, "STATUS", {"status": new_status})
+            write_log_entry(event)
             if status == new_status:
                 return
 
             status = new_status
-            event = make_event(machine_id, "STATUS", {"status": new_status})
-            write_log_entry(event)
             producer.send(MESSAGES_TOPIC, event)
             print(f"Sent status update: {event}")
 
