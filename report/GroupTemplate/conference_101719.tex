@@ -35,11 +35,14 @@
 \usepackage{array, multirow}
 \usepackage{enumitem}
 
+
+\newcolumntype{U}{>{\columncolor{ucgray}\bfseries\raggedright\arraybackslash}p{0.12\columnwidth}}
+\newcolumntype{B}{>{\raggedright\arraybackslash}X}
 % --- Use case tables ---------------------------------------------------
 \usepackage{tabularx}
 \usepackage{colortbl}
 \definecolor{ucgray}{gray}{0.92}
-\newcolumntype{L}{>{\columncolor{ucgray}\bfseries\raggedright\arraybackslash}p{0.26\columnwidth}}
+\newcolumntype{L}{>{\columncolor{ucgray}\bfseries\raggedright\arraybackslash}p{0.20\columnwidth}}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcounter{ucstep}
 \newenvironment{ucsteps}{%
@@ -94,7 +97,7 @@
 %  \gdef\mycopyrightnotice{}% just in case
 %}
       
-\title{NRG - The Future of Gel Production\\
+\title{NRGels - The State of Gel Production\\
 }
 
 \author{
@@ -179,6 +182,41 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 
 \label{sec:problem}
 \emph{Problem.}
+\begin{table}[htbp]
+  \centering
+  \caption{Functional Requirements}
+  \label{tab:functional_requirements}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\columnwidth}{|U|B|}
+    \hline
+    \rowcolor{ucgray}\textbf{ID} & \textbf{Functional Requirement} \\ \hline
+    FR-1 & Production software must be able to exchange and coordinate information to execute a production and change production. \\ \hline
+    FR-2 & Routine machine data is sent to machine suppliers every 12 hours. \\ \hline
+    FR-3 & A maintenance request is sent to a machine supplier if a machine breaks. \\ \hline
+    FR-4 & The coordination system can accommodate machines slowing down or halting. \\ \hline
+    FR-5 & The production system can produce 3 different flavoured gels simultaneously. \\ \hline
+    FR-6 & A resource order is sent when the warehouse stock levels are low. \\ \hline
+    FR-7 & Product manager can schedule a production run. \\ \hline
+  \end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Non-Functional Requirements}
+  \label{tab:non_functional_requirements}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\columnwidth}{|U|B|}
+    \hline
+    \rowcolor{ucgray}\textbf{ID} & \textbf{Non-Functional Requirement} \\ \hline
+    NFR-1 & Production software must run 24/7. \\ \hline
+    NFR-2 & Production software must be continuously deployable. \\ \hline
+    NFR-3 & The production software should be reconfigurable. \\ \hline
+    NFR-4 & Unsealed gel wrappers are not exposed to the air for longer than 10 minutes. \\ \hline
+    NFR-5 & Production software’s SLA at 99.9\% \\ \hline
+  \end{tabularx}
+\end{table}
 
 \emph{Research questions:}
 \begin{enumerate}
@@ -331,7 +369,7 @@ Table~\ref{tab:QAS} presents the QAS and Table~\ref{tab:constraints} lists the c
   \renewcommand{\arraystretch}{1.3}
   % Columns: ID (narrow, gray) | QA | Scenario (takes remaining width) | Associated Use Case
   \setlength{\tabcolsep}{4pt}% tighter cell padding leaves more room for Scenario
-  \begin{tabularx}{\columnwidth}{|>{\columncolor{ucgray}\bfseries\raggedright\arraybackslash}p{0.10\columnwidth}|>{\raggedright\arraybackslash\hspace{0pt}}p{0.20\columnwidth}|Y|>{\raggedright\arraybackslash\hspace{0pt}}p{0.10\columnwidth}|}
+  \begin{tabularx}{\columnwidth}{|>{\columncolor{ucgray}\bfseries\raggedright\arraybackslash}p{0.10\columnwidth}|>{\raggedright\arraybackslash\hspace{0pt}}p{0.20\columnwidth}|Y|>{\raggedright\arraybackslash\hspace{0pt}}p{0.12\columnwidth}|}
     \hline
     \rowcolor{ucgray}\textbf{ID} & \textbf{QA} & \textbf{Scenario} & \textbf{Assoc.\ UC or CON} \\ \hline
     QA-1 & Availability & When the stock level falls below the threshold, it is detected within 10s and a message is sent to the warehouse within 100 ms. & UC-3 \\ \hline
@@ -342,7 +380,7 @@ Table~\ref{tab:QAS} presents the QAS and Table~\ref{tab:constraints} lists the c
     QA-6 & Performance & The condition of the gel sealer is monitored and upon getting overloaded, a message is processed (Production Coordination System receives a message and generates a message which is received by the machine) within 1s. & CON-4 \\ \hline
     QA-7 & Performance & Scheduled production runs are persisted within 100ms. & UC-1 \\ \hline
     QA-8 & Performance & The stock levels are fetched within 1s. & UC-2 \\ \hline
-    QA-9 & Security & The Scheduling System is only available for registered users with a username and password. & UC-1 \& UC-2 \\ \hline
+    QA-9 & Security & The Scheduling System is only available for registered users with a username and password. & UC-1  UC-2 \\ \hline
     QA-10 & Interoperability & Machines and services can communicate regardless of their protocol without changes to the existing software. & All \\ \hline
     QA-11 & Modifiability & New machines can be integrated into the existing system, without changing the current software. & All \\ \hline
     QA-12 & Safety & Unsealed gels are never exposed for more than 10 minutes. & UC-4 \\ \hline
@@ -355,7 +393,7 @@ Table~\ref{tab:QAS} presents the QAS and Table~\ref{tab:constraints} lists the c
   \label{tab:constraints}
   \footnotesize
   \renewcommand{\arraystretch}{1.3}
-  \begin{tabularx}{\columnwidth}{|L|Y|}
+  \begin{tabularx}{\columnwidth}{|U|B|}
     \hline
     \rowcolor{ucgray}\textbf{ID} & \textbf{Constraint} \\ \hline
     CON-1 & Production Software must run 24/7. \\ \hline
@@ -375,9 +413,9 @@ Design and analysis modelling.
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\columnwidth]{fig1.png}
+  \includegraphics[width=\columnwidth]{img/architecture_overview.pdf}
   \caption{Overview of the architecture}
-  \label{fig:uc-diagram}
+  \label{fig:architecture-diagram}
 \end{figure}
 
 % Placeholder text
