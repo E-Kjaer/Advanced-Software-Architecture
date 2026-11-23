@@ -9,6 +9,11 @@ services:
     environment:
         - REDIS_ARGS=--appendonly yes
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     
   # The Kafka-setup follows the official guide: https://hub.docker.com/r/apache/kafka
   kafka:
@@ -125,7 +130,12 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./src/logging:/usr/src/app/logs:rw
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
+      redis:
+        condition: service_healthy
       kafka-init:
         condition: service_completed_successfully
 
