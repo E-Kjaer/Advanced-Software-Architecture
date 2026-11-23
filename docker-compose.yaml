@@ -1,4 +1,15 @@
 services:
+  redis:
+    image: redis:latest
+    container_name: my-redis
+    ports:
+        - '6379:6379'
+    volumes:
+        - redis-data:/data
+    environment:
+        - REDIS_ARGS=--appendonly yes
+    restart: unless-stopped
+    
   # The Kafka-setup follows the official guide: https://hub.docker.com/r/apache/kafka
   kafka:
     image: apache/kafka:4.4.0
@@ -117,3 +128,7 @@ services:
     depends_on:
       kafka-init:
         condition: service_completed_successfully
+
+volumes:
+  redis-data:
+    driver: local
