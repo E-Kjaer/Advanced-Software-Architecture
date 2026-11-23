@@ -1,0 +1,9 @@
+Run made with the follwing command:
+"
+OVERLOAD_MESSAGE_COUNT=10000 \
+OVERLOAD_MESSAGE_INTERVAL_MS=5 \
+BENCHMARK_WARMUP_MS=10000 \
+RUN_ID=bench2 \
+docker compose up -d --build
+"
+

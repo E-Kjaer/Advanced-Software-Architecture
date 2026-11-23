@@ -144,15 +144,16 @@ def send_heartbeats(
     stop_event: threading.Event,
 ) -> None:
     while not stop_event.wait(HEARTBEAT_INTERVAL_MS / 1000):
-        producer.send(
-            MESSAGES_TOPIC,
-            make_event(
-                MACHINE_ID,
-                "STATUS",
-                {"status": status.value},
-                heartbeat=True,
-            ),
-        )
+        continue
+        #producer.send(
+        #    MESSAGES_TOPIC,
+        #    make_event(
+        #        MACHINE_ID,
+        #        "STATUS",
+        #        {"status": status.value},
+        #        heartbeat=True,
+        #    ),
+        #)
 
 
 def simulate_overload(

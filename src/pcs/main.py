@@ -16,7 +16,7 @@ MACHINES_BY_TYPE: dict[str, list[int]] = {
     "TAPPER": [1, 2, 3]
 }
 
-PCS_LIFETIME = 30
+PCS_LIFETIME = 30000
 LOG_FILE = os.getenv("LOG_FILE", "logs/pcs.log")
 
 def utc_timestamp() -> str:
